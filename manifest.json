@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "local.dmenu",
+  "name": "Dmenu Launcher",
+  "version": "1.0.0",
+  "author": "Jorge Y. C. Rodriguez",
+  "description": "Classic dmenu-style keyboard-driven application launcher, anchored to the left edge of the screen",
+  "kinds": [
+    "overlay"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "Dmenu.qml"
+  }
+}
