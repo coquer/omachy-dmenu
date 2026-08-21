@@ -135,7 +135,10 @@ remember to `omarchy restart shell` after editing (see above):
 |---------------------------|---------------------------------------------------|
 | Dock at bottom instead of top | `dockAtBottom` (default `false`, like dmenu's `-b`) |
 | Bar height                | `barHeight` (default: the real bar's own `Style.bar.sizeHorizontal`) |
-| Where the segment starts  | `leftOffset` — see [Positioning](#positioning) below |
+| Where the segment starts  | `leftOffset` (computed live — see [Positioning](#positioning) below) |
+| Base part of `leftOffset` (menu icon, margins) | `leftBase` (default `40`) |
+| Width per workspace pill  | `perWorkspaceWidth` (default the real widget's own `Style.space(20)`) |
+| Highest workspace id counted | `maxWorkspaceId` (default `10`, matches the workspace widget's own default) |
 | Gap before the bar's center modules | `centerGap` (default `100`) — see [Positioning](#positioning) below |
 | Padding inside the segment | `sideMargin`                                      |
 | Padding around each match | `itemPaddingX`                                     |
@@ -145,18 +148,31 @@ remember to `omarchy restart shell` after editing (see above):
 
 ### Positioning
 
-`leftOffset` is a **measured pixel value**, not a computed one — a
-separate Wayland layer-shell surface can't query another plugin's live
-rendered widget width, so there's no way to programmatically know exactly
-where your bar's workspace-number widget ends. The default (`120`) was
-measured against a bar with a menu icon plus a workspace-numbers widget in
-its left section. If your left section has different widgets, a different
-workspace count, or you resize/reorder anything there, re-measure it:
+`leftOffset` tracks your *current* workspace count live, rather than
+being one fixed guess: `leftOffset = leftBase + workspaceCount *
+perWorkspaceWidth`. A separate Wayland layer-shell surface still can't
+query the real bar's live rendered widget width directly, but the
+workspace widget (`i3-workspaces`/`omarchy.workspaces`) renders each
+active workspace as a fixed-width pill with no gap between them
+(`Style.space(20)`, no `columnSpacing`), so the *variable* part can be
+computed from the same live Hyprland workspace data those widgets read
+(`Quickshell.Hyprland`'s `Hyprland.workspaces`, filtered to the current
+monitor and refreshed on every open) instead of measured once and left
+stale. This is what fixed the "gap is too wide with only a few
+workspaces active" issue — the offset now shrinks and grows with the
+actual pill count instead of assuming a fixed number of them.
+
+`leftBase` (default `40`) is the part that *doesn't* vary with workspace
+count — bar edge margin, menu icon, module spacing — and is still a
+measured constant, the same way `leftOffset` used to be entirely. If your
+left section has different widgets before the workspace pills (or you
+don't use `i3-workspaces`-style fixed-width pills at all), re-measure just
+that base:
 
 ```bash
 # crop a strip from the top-left corner and narrow the width until the
-# last workspace number just disappears — that width is your leftOffset
-grim -g "0,0 130x30" /tmp/bar-check.png
+# first workspace number just disappears — that width is your leftBase
+grim -g "0,0 60x30" /tmp/bar-check.png
 ```
 
 The right edge is capped at the screen's horizontal center minus
@@ -177,9 +193,11 @@ feeding names to the actual `dmenu` binary:
 - **Layout**: a single flat segment integrated into the real status bar —
   not a floating card, not a second bar — prompt/input on the left,
   matches immediately after it running left-to-right, not a dropdown
-  list. It starts after your workspace numbers and stops before the
-  screen's horizontal center (see [Positioning](#positioning) above); the
-  rest of the real bar stays visible on both sides.
+  list. It starts right after your workspace numbers — tracking however
+  many are actually active right now, not a fixed guess — and stops
+  before the screen's horizontal center (see
+  [Positioning](#positioning) above); the rest of the real bar stays
+  visible on both sides.
 - **Matching**: case-insensitive, and every space-separated term in your
   query must appear somewhere in the name (an AND search, e.g. `"fire fox"`
   matches "Firefox"). There is no fuzzy or acronym scoring. Results are

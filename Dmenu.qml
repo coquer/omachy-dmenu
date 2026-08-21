@@ -1,5 +1,6 @@
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import QtQuick
 import qs.Commons
 
@@ -48,15 +49,46 @@ Item {
 
   // Where the dmenu segment starts and how far right it may grow. A
   // separate Wayland surface can't query the real bar's live widget
-  // geometry (different layer-shell client, no shared property), so this
-  // is a measured pixel offset, not a computed one — re-measure it if you
+  // geometry (different layer-shell client, no shared property), so
+  // leftOffset can't be read off the real bar directly — but the bar's
+  // workspace-number widget (i3-workspaces/omarchy.workspaces) renders
+  // each pill at a fixed Style.space(20) with no gap between them, so the
+  // *variable* part (how many pills there are right now) can be tracked
+  // live via the same Quickshell.Hyprland data those widgets use. leftBase
+  // covers everything before the workspace pills (bar margin, menu icon,
+  // module spacing) and stays a measured constant — re-measure it if you
   // change what's in the bar's left section (see README.md). Right edge
   // stops short of the screen's horizontal center by centerGap, leaving
   // breathing room before the bar's own center modules (clock, etc.).
-  property int leftOffset: 120
+  property int maxWorkspaceId: 10
+  property int perWorkspaceWidth: Style.space(20)
+  property int leftBase: 40
+  property int leftOffset: root.leftBase + root.workspaceCount * root.perWorkspaceWidth
   property int centerGap: 100
   readonly property int maxRightX: Math.round(panel.width / 2) - root.centerGap
   readonly property int contentWidth: Math.max(0, root.maxRightX - root.leftOffset)
+
+  // Same id set the i3-workspaces/omarchy.workspaces widgets compute for
+  // this monitor: every live Hyprland workspace id in [1, maxWorkspaceId],
+  // owned by this screen (or unowned), deduplicated.
+  readonly property var hyprWorkspaceIds: {
+    var mine = panel.screen ? String(panel.screen.name || "") : ""
+    var ids = []
+    var values = Hyprland.workspaces.values
+    for (var i = 0; i < values.length; i++) {
+      var ws = values[i]
+      var id = ws.id
+      if (id <= 0 || id > root.maxWorkspaceId) continue
+      if (mine !== "") {
+        var owner = ws.monitor && ws.monitor.name ? String(ws.monitor.name)
+          : (ws.lastIpcObject && ws.lastIpcObject.monitor ? String(ws.lastIpcObject.monitor) : "")
+        if (owner !== "" && owner !== mine) continue
+      }
+      if (ids.indexOf(id) === -1) ids.push(id)
+    }
+    return ids
+  }
+  readonly property int workspaceCount: root.hyprWorkspaceIds.length
 
   ListModel { id: displayModel }
 
@@ -66,6 +98,10 @@ Item {
     root.opened = true
     root.filterText = ""
     root.selectedIndex = 0
+    // keepLoaded means this component can sit around for a long time —
+    // pull a fresh workspace count so leftOffset reflects "right now"
+    // rather than whatever it was when the plugin last mounted.
+    Hyprland.refreshWorkspaces()
     root.rebuildDisplay()
     Qt.callLater(function() { keyCatcher.forceActiveFocus() })
   }
