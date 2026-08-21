@@ -312,6 +312,16 @@ Item {
       }
     }
 
+    // Click anywhere on the transparent surface outside the visible
+    // segment closes without launching — the counterpart to Escape.
+    // Placed before contentBar so contentBar's own swallow MouseArea
+    // (declared first inside it) sits on top and takes priority over
+    // this one for clicks on the segment itself.
+    MouseArea {
+      anchors.fill: parent
+      onClicked: root.dismiss()
+    }
+
     // The one opaque, visible segment: starts right after the real bar's
     // workspace-number widget (root.leftOffset) and never reaches past
     // the screen's horizontal center (root.maxRightX) — see the layout
@@ -323,6 +333,12 @@ Item {
       height: parent.height
       color: root.background
       clip: true
+
+      // Swallow clicks on the segment itself so they don't fall through
+      // to the outside-click dismiss handler above. Declared first so the
+      // prompt/list/hint below (and their own MouseAreas) still render and
+      // receive input on top of it.
+      MouseArea { anchors.fill: parent; onClicked: {} }
 
       // Prompt/input. A live Text bound to filterText rather than a real
       // TextField — keeps a single exclusive-focus key grab for the whole

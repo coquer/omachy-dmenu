@@ -219,9 +219,13 @@ feeding names to the actual `dmenu` binary:
 - Navigation: `Left`/`Right` (matches run horizontally, not vertically),
   `Tab`/`Shift+Tab`, and `Ctrl+J`/`Ctrl+K` (plain `j`/`k` are left alone
   since you're always typing a filter, like real dmenu).
-- `Escape` or `Ctrl+C` closes without launching. There's no click-outside
-  dismiss — real dmenu doesn't have one either, since it's a thin bar with
-  no "outside" to click on top of the rest of your desktop.
+- `Escape`, `Ctrl+C`, or clicking anywhere outside the visible segment all
+  close without launching — a deliberate departure from real dmenu, which
+  has no click-outside at all (its X11 grab makes the rest of the desktop
+  unreachable while it's open, so the concept doesn't apply there). Here
+  the surface spans the full bar width to hold the keyboard grab, so any
+  click that lands outside the visible segment closes it instead of doing
+  nothing.
 - App launches use the same path as the Omarchy menu: `uwsm-app --
   gtk-launch <id>.desktop`. Freeform commands run directly via `bash -lc`.
 - `keepLoaded: true` in the manifest keeps the window mounted between
