@@ -11,7 +11,8 @@ also taken from actual dmenu (see [Behavior notes](#behavior-notes)
 below).
 
 Plugin id: `local.dmenu` · kind: `overlay` · repo:
-[coquer/omachy-dmenu](https://github.com/coquer/omachy-dmenu)
+[coquer/omachy-dmenu](https://github.com/coquer/omachy-dmenu) · license:
+[MIT](LICENSE)
 
 ## Requirements
 
