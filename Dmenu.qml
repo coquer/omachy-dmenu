@@ -297,6 +297,7 @@ Item {
         anchors.leftMargin: root.sideMargin
         anchors.verticalCenter: parent.verticalCenter
         text: root.filterText.length > 0 ? (root.filterText + "▏") : "▏"
+        textFormat: Text.PlainText
         color: root.foreground
         font.family: root.fontFamily
         font.pixelSize: Style.font.body
@@ -334,7 +335,12 @@ Item {
           Text {
             id: labelText
             anchors.centerIn: parent
+            // row.label comes straight from a .desktop file's Name= field —
+            // untrusted local content. Without this, Qt's default AutoText
+            // format sniffs for HTML and would render (and fetch resources
+            // for, e.g. <img src=...>) a crafted rich-text name.
             text: row.label
+            textFormat: Text.PlainText
             color: row.hasCursor ? root.selectedText : root.foreground
             font.family: root.fontFamily
             font.pixelSize: Style.font.body
@@ -358,6 +364,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         visible: displayModel.count === 0 && root.filterText.length > 0
         text: "no match — Enter runs this as a command"
+        textFormat: Text.PlainText
         color: root.foreground
         opacity: 0.55
         font.family: root.fontFamily
